@@ -33,9 +33,9 @@ def main():
     from molecules.model import MoleculeVAE
     from molecules.utils import one_hot_array, one_hot_index, from_one_hot_array, \
         decode_smiles_from_indexes, load_dataset
-    from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
+    from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, TensorBoard
     
-    data_train, data_test, charset = load_dataset(args.data)
+    data_train, data_test, charset, property_train, property_test = load_dataset(args.data)
     model = MoleculeVAE()
     if os.path.isfile(args.model):
         model.load(charset, args.model, latent_rep_size = args.latent_dim)
@@ -51,14 +51,16 @@ def main():
                                   patience = 3,
                                   min_lr = 0.0001)
 
+    tbCallBack = TensorBoard(log_dir='./graph')
+
     model.autoencoder.fit(
         data_train,
-        data_train,
+        {'decoded_mean': data_train, 'optim_pred': property_train},
         shuffle = True,
         nb_epoch = args.epochs,
         batch_size = args.batch_size,
-        callbacks = [checkpointer, reduce_lr],
-        validation_data = (data_test, data_test)
+        callbacks = [checkpointer, reduce_lr, tbCallBack],
+        validation_data = (data_test, {'decoded_mean': data_test, 'optim_pred': property_test})
     )
 
 if __name__ == '__main__':

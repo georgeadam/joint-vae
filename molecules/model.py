@@ -38,12 +38,17 @@ class MoleculeVAE():
         vae_loss, z1 = self._buildEncoder(x1, latent_rep_size, max_length)
         self.autoencoder = Model(
             x1,
-            self._buildDecoder(
+            [self._buildDecoder(
                 z1,
                 latent_rep_size,
                 max_length,
                 charset_length
-            )
+            ), self._buildOptimizer(z1, latent_rep_size, prop='LogP')]
+        )
+
+        self.optimizer = Model(
+            encoded_input,
+            self._buildOptimizer(encoded_input, latent_rep_size, prop='LogP')
         )
 
         if weights_file:
@@ -52,8 +57,9 @@ class MoleculeVAE():
             self.decoder.load_weights(weights_file, by_name = True)
 
         self.autoencoder.compile(optimizer = 'Adam',
-                                 loss = vae_loss,
-                                 metrics = ['accuracy'])
+                                 loss = [vae_loss, 'mean_squared_error'],
+                                 metrics = ['accuracy'],
+                                 loss_weights=[1.0, 0.1])
 
     def _buildEncoder(self, x, latent_rep_size, max_length, epsilon_std = 0.01):
         h = Convolution1D(9, 9, activation = 'relu', name='conv_1')(x)
@@ -87,6 +93,14 @@ class MoleculeVAE():
         h = GRU(501, return_sequences = True, name='gru_2')(h)
         h = GRU(501, return_sequences = True, name='gru_3')(h)
         return TimeDistributed(Dense(charset_length, activation='softmax'), name='decoded_mean')(h)
+
+
+    def _buildOptimizer(self, z, latent_rep_size, prop='LogP'):
+        h = Dense(latent_rep_size, name='optimz_h1', activation='tanh')(z)
+        h = Dense(latent_rep_size, name='optimz_h2', activation='tanh')(h)
+        h = Dense(latent_rep_size, name='optimz_h3', activation='tanh')(h)
+        return Dense(1, name='optim_pred', activation='linear')(h)
+
 
     def save(self, filename):
         self.autoencoder.save_weights(filename)

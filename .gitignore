@@ -1,3 +1,7 @@
 *.pyc
 tmp-*
 target/
+*.h5
+data/*.h5
+graph/
+.idea/

@@ -18,7 +18,7 @@ def from_one_hot_array(vec):
 def decode_smiles_from_indexes(vec, charset):
     return "".join(map(lambda x: charset[x], vec)).strip()
 
-def load_dataset(filename, split = True):
+def load_dataset(filename, prop=True, split = True):
     h5f = h5py.File(filename, 'r')
     if split:
         data_train = h5f['data_train'][:]
@@ -26,8 +26,20 @@ def load_dataset(filename, split = True):
         data_train = None
     data_test = h5f['data_test'][:]
     charset =  h5f['charset'][:]
+
+    if prop:
+        property_train = h5f['property_train'][:]
+        property_test = h5f['property_test'][:]
+
     h5f.close()
+
     if split:
+        if prop:
+            return (data_train, data_test, charset, property_train, property_test)
+
         return (data_train, data_test, charset)
     else:
+        if prop:
+            return (data_test, charset, property_train)
+
         return (data_test, charset)
