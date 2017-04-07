@@ -53,6 +53,22 @@ Example:
 
 `python preprocess.py data/smiles_50k.h5 data/processed.h5`
 
+The output of the `preprocess.py` script depends heavily on the option --property_column. The outputted
+h5py file will have a vector dedicated to storing the values found in the column name specified by this option. For example,
+if we call ths script as follows:
+
+`python preprocess.py data/smiles_50k.h5 data/processed.h5 --property_column="LogP"`
+
+the LogP column will be stored in file `data/processed.h5` and can be accessed via the following code snippet:
+
+```python
+    h5f = h5py.File(filename, 'r')
+
+    property_train = h5f['property_train'][:]
+```
+
+The property_train vector is then used as the supplementary output for the joint model, i.e. when jointly optimizing the
+VAE loss and the 
 ## Training the network
 
 The preprocessed data can be fed into the `train.py` script:

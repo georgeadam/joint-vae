@@ -53,9 +53,11 @@ def main():
 
     tbCallBack = TensorBoard(log_dir='./graph')
 
+    # Notice how there are two different desired outputs. This is due to the fact that our model has 2 outputs,
+    # namely the output of the decoder, and the output of the property prediction module.
     model.autoencoder.fit(
-        data_train,
-        {'decoded_mean': data_train, 'optim_pred': property_train},
+        data_train, # This is our input
+        {'decoded_mean': data_train, 'optim_pred': property_train}, # These are the two desired outputs
         shuffle = True,
         nb_epoch = args.epochs,
         batch_size = args.batch_size,
