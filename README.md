@@ -31,7 +31,7 @@ You'll need to ensure the proper CUDA libraries are installed for this version t
 
 A small 50k molecule dataset is included in `data/smiles_50k.h5` to make it easier to get started playing around with the model. A much larger 500k ChEMBL 21 extract is also included in `data/smiles_500k.h5`. A model trained on `smiles_500k.h5` is included in `data/model_500k.h5`.
 
-All h5 files in this repo by [git-lfs](https://git-lfs.github.com/) rather than included directly in the repo.
+All h5 files in this repo by [git-lfs](https://git-lfs.github.com/) rather than included directly in the repo. Use git lfs pull to get the data. 
 
 To download original datasets to work with, you can use the `download_dataset.py` script:
 
@@ -68,7 +68,7 @@ the LogP column will be stored in file `data/processed.h5` and can be accessed v
 ```
 
 The property_train vector is then used as the supplementary output for the joint model, i.e. when jointly optimizing the
-VAE loss and the 
+VAE loss and the property prediction network.
 ## Training the network
 
 The preprocessed data can be fed into the `train.py` script:
