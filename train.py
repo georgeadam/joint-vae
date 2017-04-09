@@ -4,12 +4,24 @@ import argparse
 import os
 import h5py
 import numpy as np
+from keras.callbacks import Callback
+import keras.backend as K
 
 
 NUM_EPOCHS = 1
 BATCH_SIZE = 600
 LATENT_DIM = 292
 RANDOM_SEED = 1337
+
+class MyCallback(Callback):
+    def __init__(self, alpha):
+        self.alpha = alpha
+    # customize your behavior
+    def on_epoch_end(self, epoch, logs={}):
+        if self.alpha < 0.4 and epoch >= 2:
+            self.alpha = self.alpha + 0.05
+
+            print(self.alpha)
 
 def get_arguments():
     parser = argparse.ArgumentParser(description='Molecular autoencoder network')
@@ -52,6 +64,8 @@ def main():
                                   min_lr = 0.0001)
 
     tbCallBack = TensorBoard(log_dir='./graph')
+
+
 
     # Notice how there are two different desired outputs. This is due to the fact that our model has 2 outputs,
     # namely the output of the decoder, and the output of the property prediction module.

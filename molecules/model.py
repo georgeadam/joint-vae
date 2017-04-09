@@ -8,10 +8,14 @@ from keras.layers.wrappers import TimeDistributed
 from keras.layers.recurrent import GRU
 from keras.layers.convolutional import Convolution1D
 
+
+
 class MoleculeVAE():
 
     autoencoder = None
-    
+
+    alpha = K.variable(0.1)
+
     def create(self,
                charset,
                max_length = 120,
@@ -59,7 +63,7 @@ class MoleculeVAE():
         self.autoencoder.compile(optimizer = 'Adam',
                                  loss = [vae_loss, 'mean_squared_error'],
                                  metrics = ['accuracy'],
-                                 loss_weights=[1.0, 0.1])
+                                 loss_weights=[1.0, 0.5])
 
     def _buildEncoder(self, x, latent_rep_size, max_length, epsilon_std = 0.01):
         h = Convolution1D(9, 9, activation = 'relu', name='conv_1')(x)
