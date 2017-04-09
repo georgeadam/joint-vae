@@ -5,8 +5,7 @@ import os
 import h5py
 import numpy as np
 from keras.callbacks import Callback
-import keras.backend as K
-
+from molecules.model import LossHistoryDecodedMean, LossHistoryOptim
 
 NUM_EPOCHS = 1
 BATCH_SIZE = 600
@@ -22,6 +21,7 @@ class MyCallback(Callback):
             self.alpha = self.alpha + 0.05
 
             print(self.alpha)
+
 
 def get_arguments():
     parser = argparse.ArgumentParser(description='Molecular autoencoder network')
@@ -52,7 +52,7 @@ def main():
     if os.path.isfile(args.model):
         model.load(charset, args.model, latent_rep_size = args.latent_dim)
     else:
-        model.create(charset, latent_rep_size = args.latent_dim)
+        model.create(charset, latent_rep_size = args.latent_dim, predictor='regression')
 
     checkpointer = ModelCheckpoint(filepath = args.model,
                                    verbose = 1,
@@ -65,19 +65,34 @@ def main():
 
     tbCallBack = TensorBoard(log_dir='./graph')
 
-
-
+    optimHistory =LossHistoryOptim()
+    decodedHistory = LossHistoryDecodedMean()
     # Notice how there are two different desired outputs. This is due to the fact that our model has 2 outputs,
     # namely the output of the decoder, and the output of the property prediction module.
-    model.autoencoder.fit(
-        data_train, # This is our input
-        {'decoded_mean': data_train, 'optim_pred': property_train}, # These are the two desired outputs
-        shuffle = True,
-        nb_epoch = args.epochs,
-        batch_size = args.batch_size,
-        callbacks = [checkpointer, reduce_lr, tbCallBack],
-        validation_data = (data_test, {'decoded_mean': data_test, 'optim_pred': property_test})
-    )
+    vae_weight = 1.0
+    optim_weight = 0.1
+    for epoch in range(args.epochs):
+        if epoch > 0 and np.mean(decodedHistory.losses[-50:-35]) - np.mean(decodedHistory.losses[-15:]) < 0.0003 \
+                and optim_weight > 0.1:
+            optim_weight -= 0.05
+
+        elif epoch > 0 and np.mean(optimHistory.losses[-50:-35]) - np.mean(optimHistory.losses[-15:]) < 0.0003:
+            optim_weight += 0.05
+
+        model.autoencoder.compile(optimizer='Adam',
+                                 loss=[model.vae_loss, model.predictor_loss],
+                                 metrics=['accuracy'],
+                                 loss_weights=[vae_weight, optim_weight])
+
+        model.autoencoder.fit(
+            data_train, # This is our input
+            {'decoded_mean': data_train, 'optim_pred': property_train}, # These are the two desired outputs
+            shuffle = True,
+            nb_epoch = 1,
+            batch_size = args.batch_size,
+            callbacks = [checkpointer, reduce_lr, tbCallBack, optimHistory, decodedHistory],
+            validation_data = (data_test, {'decoded_mean': data_test, 'optim_pred': property_test})
+        )
 
 if __name__ == '__main__':
     main()

@@ -66,7 +66,7 @@ def visualize_latent_rep(args, model, x_latent, properties):
 
     print(x_latent.shape)
     figure(figsize=(6, 6))
-    scatter(x_latent[:, 0], x_latent[:, 1], c=properties, marker='.')
+    scatter(x_latent[:, 0], x_latent[:, 1], c=properties, marker='.', s=0.1)
     show()
 
     tsne = TSNE(n_components = args.tsne_components,
@@ -92,8 +92,6 @@ def main():
     else:
         raise ValueError("Model file %s doesn't exist" % args.model)
 
-    data = data[:10000]
-    properties_train = properties_train[:10000]
     x_latent = model.encoder.predict(data)
     if not args.visualize:
         if not args.save_h5:
