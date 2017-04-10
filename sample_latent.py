@@ -61,6 +61,7 @@ def visualize_latent_rep(args, model, x_latent, properties):
     ))
 
     if args.use_pca:
+        print("Computing PCA")
         pca = PCA(n_components = args.pca_components)
         x_latent = pca.fit_transform(x_latent)
 

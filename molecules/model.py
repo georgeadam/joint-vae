@@ -126,15 +126,15 @@ class MoleculeVAE():
         return TimeDistributed(Dense(charset_length, activation='softmax'), name='decoded_mean')(h)
 
     def _buildRegressionOptimizer(self, z, latent_rep_size, prop='LogP'):
-        h = Dense(latent_rep_size, name='optimz_h1', activation='tanh')(z)
-        h = Dense(latent_rep_size, name='optimz_h2', activation='tanh')(h)
-        h = Dense(latent_rep_size, name='optimz_h3', activation='tanh')(h)
+        h = Dense(latent_rep_size, name='optimz_h1', activation='linear')(z)
+        # h = Dense(latent_rep_size, name='optimz_h2', activation='tanh')(h)
+        # h = Dense(latent_rep_size, name='optimz_h3', activation='tanh')(h)
         return Dense(1, name='optim_pred', activation='linear')(h)
 
     def _buildClassificationOptimizer(self, z, latent_rep_size, num_classes=2, prop='fda'):
-        h = Dense(latent_rep_size, name='optimz_h1', activation='tanh')(z)
-        h = Dense(latent_rep_size, name='optimz_h2', activation='tanh')(h)
-        h = Dense(latent_rep_size, name='optimz_h3', activation='tanh')(h)
+        h = Dense(latent_rep_size, name='optimz_h1', activation='linear')(z)
+        # h = Dense(latent_rep_size, name='optimz_h2', activation='tanh')(h)
+        # h = Dense(latent_rep_size, name='optimz_h3', activation='tanh')(h)
         return Dense(num_classes, name='optim_pred', activation='softmax')(h)
 
     def save(self, filename):

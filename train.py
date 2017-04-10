@@ -71,28 +71,21 @@ def main():
     # namely the output of the decoder, and the output of the property prediction module.
     vae_weight = 1.0
     optim_weight = 0.1
-    for epoch in range(args.epochs):
-        if epoch > 0 and np.mean(decodedHistory.losses[-50:-35]) - np.mean(decodedHistory.losses[-15:]) < 0.0003 \
-                and optim_weight > 0.1:
-            optim_weight -= 0.05
 
-        elif epoch > 0 and np.mean(optimHistory.losses[-50:-35]) - np.mean(optimHistory.losses[-15:]) < 0.0003:
-            optim_weight += 0.05
+    model.autoencoder.compile(optimizer='Adam',
+                             loss=[model.vae_loss, model.predictor_loss],
+                             metrics=['accuracy'],
+                             loss_weights=[vae_weight, optim_weight])
 
-        model.autoencoder.compile(optimizer='Adam',
-                                 loss=[model.vae_loss, model.predictor_loss],
-                                 metrics=['accuracy'],
-                                 loss_weights=[vae_weight, optim_weight])
-
-        model.autoencoder.fit(
-            data_train, # This is our input
-            {'decoded_mean': data_train, 'optim_pred': property_train}, # These are the two desired outputs
-            shuffle = True,
-            nb_epoch = 1,
-            batch_size = args.batch_size,
-            callbacks = [checkpointer, reduce_lr, tbCallBack, optimHistory, decodedHistory],
-            validation_data = (data_test, {'decoded_mean': data_test, 'optim_pred': property_test})
-        )
+    model.autoencoder.fit(
+        data_train, # This is our input
+        {'decoded_mean': data_train, 'optim_pred': property_train}, # These are the two desired outputs
+        shuffle = True,
+        nb_epoch = args.epochs,
+        batch_size = args.batch_size,
+        callbacks = [checkpointer, reduce_lr, tbCallBack, optimHistory, decodedHistory],
+        validation_data = (data_test, {'decoded_mean': data_test, 'optim_pred': property_test})
+    )
 
 if __name__ == '__main__':
     main()
