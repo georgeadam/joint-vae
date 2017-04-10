@@ -72,8 +72,8 @@ def main():
     vae_weight = 1.0
     optim_weight = 0.1
     for epoch in range(args.epochs):
-        if epoch > 0 and np.mean(decodedHistory.losses[-50:-35]) - np.mean(decodedHistory.losses[-15:]) < 0.0003 \
-                and optim_weight > 0.1:
+        if epoch > 0 and np.mean(decodedHistory.losses[-10:]) - np.mean(decodedHistory.losses[-50:-40]) < 0.0003 \
+                and optim_weight > 0.01:
             optim_weight -= 0.05
 
         elif epoch > 0 and np.mean(optimHistory.losses[-50:-35]) - np.mean(optimHistory.losses[-15:]) < 0.0003:
