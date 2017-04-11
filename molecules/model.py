@@ -41,7 +41,7 @@ class MoleculeVAE():
         charset_length = len(charset)
 
         x = Input(shape=(max_length, charset_length))
-        _, z = self._buildEncoder(x, latent_rep_size, max_length)
+        _, _, z = self._buildEncoder(x, latent_rep_size, max_length)
         self.encoder = Model(x, z)
 
         encoded_input = Input(shape=(latent_rep_size,))
@@ -56,7 +56,7 @@ class MoleculeVAE():
         )
 
         x1 = Input(shape=(max_length, charset_length))
-        vae_loss, z1 = self._buildEncoder(x1, latent_rep_size, max_length)
+        kl_loss, xent_loss, z1 = self._buildEncoder(x1, latent_rep_size, max_length)
         self.autoencoder = Model(
             x1,
             [self._buildDecoder(
@@ -64,12 +64,12 @@ class MoleculeVAE():
                 latent_rep_size,
                 max_length,
                 charset_length
-            ), self._buildRegressionOptimizer(z1, latent_rep_size) if predictor == 'regression' else
+            ), Lambda(lambda x: x, name='vae')(z1), self._buildRegressionOptimizer(z1, latent_rep_size) if predictor == 'regression' else
                 self._buildClassificationOptimizer(z1, latent_rep_size, num_classes)]
         )
 
-        self.vae_loss = vae_loss
-
+        self.kl_loss = kl_loss
+	self.xent_loss = xent_loss
         if predictor == 'regression':
             self.optimizer = Model(
                 encoded_input,
@@ -88,9 +88,9 @@ class MoleculeVAE():
 
         self.predictor_loss = 'mean_squared_error' if predictor == 'regression' else 'categorical_crossentropy'
         self.autoencoder.compile(optimizer='Adam',
-                                 loss=[vae_loss, self.predictor_loss],
+                                 loss=[xent_loss,kl_loss, self.predictor_loss],
                                  metrics=['accuracy'],
-                                 loss_weights=[1.0, 0.5])
+                                 loss_weights=[1.0, 0.5, 0.0])
 
     def _buildEncoder(self, x, latent_rep_size, max_length, epsilon_std=0.01):
         h = Convolution1D(9, 9, activation='relu', name='conv_1')(x)
@@ -108,14 +108,20 @@ class MoleculeVAE():
         z_mean = Dense(latent_rep_size, name='z_mean', activation='linear')(h)
         z_log_var = Dense(latent_rep_size, name='z_log_var', activation='linear')(h)
 
-        def vae_loss(x, x_decoded_mean):
+        def kl_loss(x, x_decoded_mean):
+            #x = K.flatten(x)
+            #x_decoded_mean = K.flatten(x_decoded_mean)
+            #xent_loss = max_length * objectives.binary_crossentropy(x, x_decoded_mean)
+            kl_loss = - 0.5 * K.mean(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
+            return kl_loss
+	def xent_loss(x, x_decoded_mean):
             x = K.flatten(x)
             x_decoded_mean = K.flatten(x_decoded_mean)
             xent_loss = max_length * objectives.binary_crossentropy(x, x_decoded_mean)
-            kl_loss = - 0.5 * K.mean(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
-            return xent_loss + kl_loss
-
-        return (vae_loss, Lambda(sampling, output_shape=(latent_rep_size,), name='lambda')([z_mean, z_log_var]))
+            #kl_loss = - 0.5 * K.mean(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
+            return xent_loss
+	
+        return (kl_loss, xent_loss, Lambda(sampling, output_shape=(latent_rep_size,), name='lambda')([z_mean, z_log_var]))
 
     def _buildDecoder(self, z, latent_rep_size, max_length, charset_length):
         h = Dense(latent_rep_size, name='latent_input', activation='relu')(z)

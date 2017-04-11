@@ -8,7 +8,7 @@ from keras.callbacks import Callback
 from molecules.model import LossHistoryDecodedMean, LossHistoryOptim
 
 NUM_EPOCHS = 1
-BATCH_SIZE = 600
+BATCH_SIZE = 1000
 LATENT_DIM = 292
 RANDOM_SEED = 1337
 
@@ -36,6 +36,8 @@ def get_arguments():
                         help='Number of samples to process per minibatch during training.')
     parser.add_argument('--random_seed', type=int, metavar='N', default=RANDOM_SEED,
                         help='Seed to use to start randomizer for shuffling.')
+    parser.add_argument('--kl_weight', type=float, metavar='N', default=0)
+    parser.add_argument('--opt_weight', type=float, metavar='N', default=0)
     return parser.parse_args()
 
 def main():
@@ -63,28 +65,28 @@ def main():
                                   patience = 3,
                                   min_lr = 0.0001)
 
-    tbCallBack = TensorBoard(log_dir='./graph')
+    #tbCallBack = TensorBoard(log_dir='./graph')
 
     optimHistory =LossHistoryOptim()
     decodedHistory = LossHistoryDecodedMean()
     # Notice how there are two different desired outputs. This is due to the fact that our model has 2 outputs,
     # namely the output of the decoder, and the output of the property prediction module.
-    vae_weight = 1.0
-    optim_weight = 0.1
-
+    kl_weight = args.kl_weight
+    opt_weight = args.opt_weight
     model.autoencoder.compile(optimizer='Adam',
-                             loss=[model.vae_loss, model.predictor_loss],
+                             loss=[model.xent_loss, model.kl_loss, model.predictor_loss],
                              metrics=['accuracy'],
-                             loss_weights=[vae_weight, optim_weight])
+                             loss_weights=[1,kl_weight, opt_weight])
 
     model.autoencoder.fit(
         data_train, # This is our input
-        {'decoded_mean': data_train, 'optim_pred': property_train}, # These are the two desired outputs
+        [ data_train,np.zeros([data_train.shape[0],1]),property_train], # These are the two desired outputs
         shuffle = True,
         nb_epoch = args.epochs,
         batch_size = args.batch_size,
-        callbacks = [checkpointer, reduce_lr, tbCallBack, optimHistory, decodedHistory],
-        validation_data = (data_test, {'decoded_mean': data_test, 'optim_pred': property_test})
+        #callbacks = [checkpointer, reduce_lr, tbCallBack, optimHistory, decodedHistory],
+        callbacks = [checkpointer, reduce_lr, optimHistory, decodedHistory],
+        validation_data = (data_test,[ data_test,np.zeros([data_test.shape[0],1]),property_test] )
     )
 
 if __name__ == '__main__':
