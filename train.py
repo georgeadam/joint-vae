@@ -54,9 +54,10 @@ def main():
     else:
         model.create(charset, latent_rep_size = args.latent_dim, predictor='regression')
 
-    checkpointer = ModelCheckpoint(filepath = args.model,
+    filepath = "model_linear-schedule-{epoch:02d}-{val_optim_pred_loss:.2f}-{val_decoded_mean_acc:.2f}.h5"
+    checkpointer = ModelCheckpoint(filepath = filepath,
                                    verbose = 1,
-                                   save_best_only = True)
+                                   save_best_only = False)
 
     reduce_lr = ReduceLROnPlateau(monitor = 'val_loss',
                                   factor = 0.2,
@@ -70,21 +71,33 @@ def main():
     # Notice how there are two different desired outputs. This is due to the fact that our model has 2 outputs,
     # namely the output of the decoder, and the output of the property prediction module.
     vae_weight = 1.0
-    optim_weight = 0.1
+    # optim_weight = 1.4
+    optim_weight_schedule = [0.10, 0.08, 0.08, 0.18, 0.24, 0.30, 0.40, 0.45, 0.6, 0.8]
+    # optim_weight_schedule = [2.0, 2.4, 2.6, 2.8, 3.0]
 
-    model.autoencoder.compile(optimizer='Adam',
-                             loss=[model.vae_loss, model.predictor_loss],
-                             metrics=['accuracy'],
-                             loss_weights=[vae_weight, optim_weight])
+    for epoch in range(args.epochs):
+        # if epoch > 0 and np.mean(decodedHistory.losses[-20:]) - np.mean(decodedHistory.losses[-150:-130]) < 0.003 \
+        #         and optim_weight > 0.01:
+        #     optim_weight -= 0.02
+        #
+        # elif epoch > 0 and np.mean(optimHistory.losses[-150:-130]) - np.mean(optimHistory.losses[-20:]) < 0.001 \
+        #         and optim_weight < 0.3:
+        #     optim_weight += 0.02
 
-    model.autoencoder.fit(
-        data_train, # This is our input
-        {'decoded_mean': data_train, 'optim_pred': property_train}, # These are the two desired outputs
-        shuffle = True,
-        nb_epoch = args.epochs,
-        batch_size = args.batch_size,
-        callbacks = [checkpointer, reduce_lr, tbCallBack, optimHistory, decodedHistory],
-        validation_data = (data_test, {'decoded_mean': data_test, 'optim_pred': property_test})
+        print("Optim weight: " + str(optim_weight_schedule[epoch]))
+        model.autoencoder.compile(optimizer='Adam',
+                                 loss=[model.vae_loss, model.predictor_loss],
+                                 metrics=['accuracy'],
+                                 loss_weights=[vae_weight, optim_weight_schedule[epoch]])
+
+        model.autoencoder.fit(
+            data_train, # This is our input
+            {'decoded_mean': data_train, 'optim_pred': property_train}, # These are the two desired outputs
+            shuffle = True,
+            nb_epoch = 1,
+            batch_size = args.batch_size,
+            callbacks = [checkpointer, reduce_lr, tbCallBack, optimHistory, decodedHistory],
+            validation_data = (data_test, {'decoded_mean': data_test, 'optim_pred': property_test})
     )
 
 if __name__ == '__main__':
