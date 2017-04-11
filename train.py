@@ -8,7 +8,7 @@ from keras.callbacks import Callback
 from molecules.model import LossHistoryDecodedMean, LossHistoryOptim
 
 NUM_EPOCHS = 1
-BATCH_SIZE = 1000
+BATCH_SIZE = 900
 LATENT_DIM = 292
 RANDOM_SEED = 1337
 
@@ -56,9 +56,10 @@ def main():
     else:
         model.create(charset, latent_rep_size = args.latent_dim, predictor='regression')
 
-    checkpointer = ModelCheckpoint(filepath = args.model,
+    filepath = "model_linear-schedule-{epoch:02d}-{val_optim_pred_loss:.2f}-{val_decoded_mean_acc:.2f}.h5"
+    checkpointer = ModelCheckpoint(filepath = filepath,
                                    verbose = 1,
-                                   save_best_only = True)
+                                   save_best_only = False)
 
     reduce_lr = ReduceLROnPlateau(monitor = 'val_loss',
                                   factor = 0.2,
@@ -71,22 +72,25 @@ def main():
     decodedHistory = LossHistoryDecodedMean()
     # Notice how there are two different desired outputs. This is due to the fact that our model has 2 outputs,
     # namely the output of the decoder, and the output of the property prediction module.
-    kl_weight = args.kl_weight
+    kl_weight = [0.15, 0.18, 0.20, 0.20, 0.30, 0.40, 0.50, 0.60, 0.7, 0.8]
     opt_weight = args.opt_weight
-    model.autoencoder.compile(optimizer='Adam',
-                             loss=[model.xent_loss, model.kl_loss, model.predictor_loss],
-                             metrics=['accuracy'],
-                             loss_weights=[1,kl_weight, opt_weight])
+    for epoch in range(args.epochs):
+      print("KL weight: " + str(kl_weight[epoch]))
+      model.autoencoder.compile(optimizer='Adam',
+                               loss=[model.xent_loss, model.kl_loss, model.predictor_loss],
+                               metrics=['accuracy'],
+                               loss_weights=[1,kl_weight[epoch], opt_weight])
 
-    model.autoencoder.fit(
-        data_train, # This is our input
-        [ data_train,np.zeros([data_train.shape[0],1]),property_train], # These are the two desired outputs
-        shuffle = True,
-        nb_epoch = args.epochs,
-        batch_size = args.batch_size,
-        #callbacks = [checkpointer, reduce_lr, tbCallBack, optimHistory, decodedHistory],
-        callbacks = [checkpointer, reduce_lr, optimHistory, decodedHistory],
-        validation_data = (data_test,[ data_test,np.zeros([data_test.shape[0],1]),property_test] )
+      model.autoencoder.fit(
+          data_train, # This is our input
+          [ data_train,np.zeros([data_train.shape[0],1]),property_train], # These are the two desired outputs
+          shuffle = True,
+          nb_epoch = 1,
+          batch_size = args.batch_size,
+          #callbacks = [checkpointer, reduce_lr, tbCallBack, optimHistory, decodedHistory],
+          callbacks = [checkpointer, reduce_lr, optimHistory, decodedHistory],
+          validation_data = (data_test,[ data_test,np.zeros([data_test.shape[0],1]),property_test] )
+
     )
 
 if __name__ == '__main__':

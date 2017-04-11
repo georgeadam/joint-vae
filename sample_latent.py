@@ -93,7 +93,7 @@ def main():
     else:
         raise ValueError("Model file %s doesn't exist" % args.model)
 
-    x_latent = model.encoder.predict(data)
+    x_latent = model.encoder.predict(data_test)
     if not args.visualize:
         if not args.save_h5:
             np.savetxt(sys.stdout, x_latent, delimiter = '\t')
@@ -103,7 +103,7 @@ def main():
             h5f.create_dataset('latent_vectors', data = x_latent)
             h5f.close()
     else:
-        visualize_latent_rep(args, model, x_latent, properties_train)
+        visualize_latent_rep(args, model, x_latent, properties_test)
 
 if __name__ == '__main__':
     main()
