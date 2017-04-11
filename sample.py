@@ -38,15 +38,15 @@ def read_latent_data(filename):
 
 def autoencoder(args, model):
     latent_dim = args.latent_dim
-    data, charset = load_dataset(args.data, split = False)
+    data_train, data_test, charset, properties_train, properties_test = load_dataset(args.data, split = True)
 
     if os.path.isfile(args.model):
         model.load(charset, args.model, latent_rep_size = latent_dim)
     else:
         raise ValueError("Model file %s doesn't exist" % args.model)
 
-    sampled = model.autoencoder.predict(data[0].reshape(1, 120, len(charset))).argmax(axis=2)[0]
-    mol = decode_smiles_from_indexes(map(from_one_hot_array, data[0]), charset)
+    sampled = model.autoencoder.predict(data_train[0].reshape(1, 120, len(charset)))[0].argmax(axis=2)[0]
+    mol = decode_smiles_from_indexes(map(from_one_hot_array, data_train[0]), charset)
     sampled = decode_smiles_from_indexes(sampled, charset)
     print(mol)
     print(sampled)
