@@ -85,6 +85,7 @@ class MoleculeVAE():
             self.autoencoder.load_weights(weights_file)
             self.encoder.load_weights(weights_file, by_name=True)
             self.decoder.load_weights(weights_file, by_name=True)
+            self.optimizer.load_weights(weights_file, by_name=True)
 
         self.predictor_loss = 'mean_squared_error' if predictor == 'regression' else 'categorical_crossentropy'
         self.autoencoder.compile(optimizer='Adam',
