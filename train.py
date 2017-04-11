@@ -8,7 +8,7 @@ from keras.callbacks import Callback
 from molecules.model import LossHistoryDecodedMean, LossHistoryOptim
 
 NUM_EPOCHS = 1
-BATCH_SIZE = 900
+BATCH_SIZE = 1000
 LATENT_DIM = 292
 RANDOM_SEED = 1337
 
@@ -72,7 +72,7 @@ def main():
     decodedHistory = LossHistoryDecodedMean()
     # Notice how there are two different desired outputs. This is due to the fact that our model has 2 outputs,
     # namely the output of the decoder, and the output of the property prediction module.
-    kl_weight = [0.15, 0.18, 0.20, 0.20, 0.30, 0.40, 0.50, 0.60, 0.7, 0.8]
+    kl_weight = [0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.30, 0.30, 0.3, 0.3]
     opt_weight = args.opt_weight
     for epoch in range(args.epochs):
       print("KL weight: " + str(kl_weight[epoch]))

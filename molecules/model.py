@@ -37,7 +37,8 @@ class MoleculeVAE():
                latent_rep_size=292,
                weights_file=None,
                num_classes=2,
-               predictor='regression'):
+               predictor='regression',
+               task='autoencode'):
         charset_length = len(charset)
 
         x = Input(shape=(max_length, charset_length))
@@ -72,26 +73,28 @@ class MoleculeVAE():
 	self.xent_loss = xent_loss
         if predictor == 'regression':
             self.optimizer = Model(
-                encoded_input,
-                self._buildRegressionOptimizer(encoded_input, latent_rep_size)
+                x1,
+                self._buildRegressionOptimizer(z1, latent_rep_size)
             )
         else:
             self.optimizer = Model(
-                encoded_input,
-                self._buildClassificationOptimizer(encoded_input, latent_rep_size, num_classes)
+                x1,
+                self._buildClassificationOptimizer(z1, latent_rep_size, num_classes)
             )
 
-        if weights_file:
+        if weights_file and task=='autoencode':
             self.autoencoder.load_weights(weights_file)
             self.encoder.load_weights(weights_file, by_name=True)
             self.decoder.load_weights(weights_file, by_name=True)
             self.optimizer.load_weights(weights_file, by_name=True)
-
+        elif weights_file:
+            self.encoder.load_weights(weights_file, by_name=True)
+            self.optimizer.load_weights(weights_file, by_name=True)
         self.predictor_loss = 'mean_squared_error' if predictor == 'regression' else 'categorical_crossentropy'
-        self.autoencoder.compile(optimizer='Adam',
-                                 loss=[xent_loss,kl_loss, self.predictor_loss],
-                                 metrics=['accuracy'],
-                                 loss_weights=[1.0, 0.5, 0.0])
+        #self.autoencoder.compile(optimizer='Adam',
+        #                         loss=[xent_loss,kl_loss, self.predictor_loss],
+        #                         metrics=['accuracy'],
+        #                         loss_weights=[1.0, 0.5, 0.0])
 
     def _buildEncoder(self, x, latent_rep_size, max_length, epsilon_std=0.01):
         h = Convolution1D(9, 9, activation='relu', name='conv_1')(x)
@@ -147,6 +150,6 @@ class MoleculeVAE():
     def save(self, filename):
         self.autoencoder.save_weights(filename)
 
-    def load(self, charset, weights_file, latent_rep_size=292, num_classes=2, predictor='regression'):
+    def load(self, charset, weights_file, latent_rep_size=292, num_classes=2, predictor='regression', task='autoencoder'):
         self.create(charset, weights_file=weights_file, latent_rep_size=latent_rep_size, num_classes=num_classes,
-                    predictor=predictor)
+                    predictor=predictor, task=task)

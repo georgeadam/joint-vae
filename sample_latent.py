@@ -5,17 +5,21 @@ import os, sys
 import h5py
 import numpy as np
 
+from sklearn.manifold import TSNE
+from sklearn.decomposition import PCA
+
+
 from molecules.model import MoleculeVAE
 from molecules.utils import one_hot_array, one_hot_index, from_one_hot_array, \
     decode_smiles_from_indexes, load_dataset
 
-from sklearn.manifold import TSNE
-from sklearn.decomposition import PCA
+import matplotlib 
+matplotlib.use('Agg')
 
-from pylab import figure, axes, scatter, title, show
+from pylab import figure, axes, scatter, title, show, savefig
 
-from rdkit import Chem
-from rdkit.Chem import Draw
+#from rdkit import Chem
+#from rdkit.Chem import Draw
 
 from keras.models import Sequential, Model, load_model
 
@@ -46,6 +50,7 @@ def get_arguments():
                         help='Skip PCA preprocessing of data to feed into t-SNE.')
     parser.add_argument('--pca_components', metavar='N', type=int, default=PCA_COMPONENTS,
                         help='Number of components to use for PCA.')
+    parser.add_argument('--v_file', type=str, help='file to save visualization in')
     parser.set_defaults(use_pca = True)
     parser.set_defaults(visualize = False)
 
@@ -68,7 +73,10 @@ def visualize_latent_rep(args, model, x_latent, properties):
     print(x_latent.shape)
     figure(figsize=(6, 6))
     scatter(x_latent[:, 0], x_latent[:, 1], c=properties, marker='.', s=0.1)
-    show()
+    if args.v_file:
+      savefig(args.v_file + '_pca.pdf', bbox_inches='tight')
+    else: 
+      show()
 
     tsne = TSNE(n_components = args.tsne_components,
                 perplexity = args.tsne_perplexity,
@@ -80,7 +88,10 @@ def visualize_latent_rep(args, model, x_latent, properties):
 
     figure(figsize=(6, 6))
     scatter(x_latent_proj[:, 0], x_latent_proj[:, 1], c=properties, marker='.')
-    show()
+    if args.v_file:
+      savefig(args.v_file + '_tsne.pdf', bbox_inches='tight')
+    else: 
+      show()
 
 def main():
     args = get_arguments()
