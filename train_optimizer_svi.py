@@ -8,7 +8,7 @@ from keras.callbacks import Callback
 from molecules.model import LossHistoryDecodedMean, LossHistoryOptim
 
 NUM_EPOCHS = 1
-BATCH_SIZE = 1000
+BATCH_SIZE = 900
 LATENT_DIM = 292
 RANDOM_SEED = 1337
 
@@ -52,14 +52,13 @@ def main():
     data_train, data_test, charset, property_train, property_test = load_dataset(args.data)
     model = MoleculeVAE()
     if os.path.isfile(args.model):
-        model.load(charset, args.model, latent_rep_size = args.latent_dim)
+        model.load(charset, args.model, latent_rep_size = args.latent_dim, task='optimizer')
     else:
-        model.create(charset, latent_rep_size = args.latent_dim, predictor='regression')
+        model.create(charset, latent_rep_size = args.latent_dim, predictor='regression', task='optimizer')
 
-    filepath = "model_linear-schedule-{epoch:02d}-{val_optim_pred_loss:.2f}-{val_decoded_mean_acc:.2f}.h5"
-    checkpointer = ModelCheckpoint(filepath = filepath,
+    checkpointer = ModelCheckpoint(filepath = args.model,
                                    verbose = 1,
-                                   save_best_only = False)
+                                   save_best_only = True)
 
     reduce_lr = ReduceLROnPlateau(monitor = 'val_loss',
                                   factor = 0.2,
@@ -72,25 +71,22 @@ def main():
     decodedHistory = LossHistoryDecodedMean()
     # Notice how there are two different desired outputs. This is due to the fact that our model has 2 outputs,
     # namely the output of the decoder, and the output of the property prediction module.
-    kl_weight = [0.55, 0.55, 0.55, 0.55, 0.55, 0.65, 0.65, 0.70, 0.8, 0.8]
-    opt_weight = [0.15, 0.15, 0.15, 0.20, 0.25, 0.25, 0.30, 0.30, 0.3, 0.3] 
-    for epoch in range(args.epochs):
-      print("KL weight: " + str(kl_weight[epoch]))
-      model.autoencoder.compile(optimizer='Adam',
-                               loss=[model.xent_loss, model.kl_loss, model.predictor_loss],
-                               metrics=['accuracy'],
-                               loss_weights=[1,kl_weight[epoch], opt_weight[epoch]])
+    kl_weight = args.kl_weight
+    opt_weight = args.opt_weight
+    model.optimizer_svi.compile(optimizer='Adam',
+                             loss=[model.predictor_loss, model.kl_loss],
+                             metrics=['accuracy'],
+                             loss_weights=[1])
 
-      model.autoencoder.fit(
-          data_train, # This is our input
-          [ data_train,np.zeros([data_train.shape[0],1]),property_train], # These are the two desired outputs
-          shuffle = True,
-          nb_epoch = 1,
-          batch_size = args.batch_size,
-          #callbacks = [checkpointer, reduce_lr, tbCallBack, optimHistory, decodedHistory],
-          callbacks = [checkpointer, reduce_lr, optimHistory, decodedHistory],
-          validation_data = (data_test,[ data_test,np.zeros([data_test.shape[0],1]),property_test] )
-
+    model.optimizer.fit(
+        data_train, # This is our input
+        [ property_train, np.zeros([data_train.shape[0],1])], # These are the two desired outputs
+        shuffle = True,
+        nb_epoch = args.epochs,
+        batch_size = args.batch_size,
+        #callbacks = [checkpointer, reduce_lr, tbCallBack, optimHistory, decodedHistory],
+        callbacks = [checkpointer, reduce_lr, optimHistory, decodedHistory],
+        validation_data = (data_test,[property_test, np.zeros([data_test.shape[0],1])] )
     )
 
 if __name__ == '__main__':

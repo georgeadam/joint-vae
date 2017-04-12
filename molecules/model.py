@@ -70,16 +70,24 @@ class MoleculeVAE():
         )
 
         self.kl_loss = kl_loss
-	self.xent_loss = xent_loss
+        self.xent_loss = xent_loss
         if predictor == 'regression':
             self.optimizer = Model(
                 x1,
                 self._buildRegressionOptimizer(z1, latent_rep_size)
             )
+            self.optimizer_svi = Model(
+                x1,
+                [self._buildRegressionOptimizer(z1, latent_rep_size), Lambda(lambda x: x, name='vae')(z1)]
+            )
         else:
             self.optimizer = Model(
                 x1,
                 self._buildClassificationOptimizer(z1, latent_rep_size, num_classes)
+            )
+            self.optimizer_svi = Model(
+                x1,
+                [self._buildClassificationOptimizer(z1, latent_rep_size), Lambda(lambda x: x, name='vae')(z1)]
             )
 
         if weights_file and task=='autoencode':

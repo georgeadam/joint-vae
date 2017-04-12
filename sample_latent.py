@@ -78,20 +78,20 @@ def visualize_latent_rep(args, model, x_latent, properties):
     else: 
       show()
 
-    tsne = TSNE(n_components = args.tsne_components,
-                perplexity = args.tsne_perplexity,
-                learning_rate = args.tsne_lr,
-                n_iter = args.tsne_iterations,
-                verbose = 4)
-    x_latent_proj = tsne.fit_transform(x_latent)
-    del x_latent
+    #tsne = TSNE(n_components = args.tsne_components,
+    #            perplexity = args.tsne_perplexity,
+    #            learning_rate = args.tsne_lr,
+    #            n_iter = args.tsne_iterations,
+    #            verbose = 4)
+    #x_latent_proj = tsne.fit_transform(x_latent)
+    #del x_latent
 
-    figure(figsize=(6, 6))
-    scatter(x_latent_proj[:, 0], x_latent_proj[:, 1], c=properties, marker='.')
-    if args.v_file:
-      savefig(args.v_file + '_tsne.pdf', bbox_inches='tight')
-    else: 
-      show()
+    #figure(figsize=(6, 6))
+    #scatter(x_latent_proj[:, 0], x_latent_proj[:, 1], c=properties, marker='.')
+    #if args.v_file:
+    #  savefig(args.v_file + '_tsne.pdf', bbox_inches='tight')
+    #else: 
+    #  show()
 
 def main():
     args = get_arguments()

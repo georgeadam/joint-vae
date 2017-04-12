@@ -84,7 +84,7 @@ def main():
       model.autoencoder.compile(optimizer='Adam',
                                loss=[model.xent_loss, model.kl_loss, model.predictor_loss],
                                metrics=['accuracy'],
-                               loss_weights=[1,kl_weight[epoch], opt_weight])
+                               loss_weights=[0.80,kl_weight[epoch], opt_weight])
 
       model.autoencoder.fit(
           data_train, # This is our input
