@@ -57,6 +57,7 @@ def get_arguments():
                         help='Indicates whether or not to train using a schedule for the loss weights, else' +
                              'first train a VAE for args.epochs, and then focus on the prediction module for' +
                         'another args.epochs. ')
+    parser.set_defaults(schedule=False)
     return parser.parse_args()
 
 def main():

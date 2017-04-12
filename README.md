@@ -71,13 +71,39 @@ The property_train vector is then used as the supplementary output for the joint
 VAE loss and the property prediction network.
 ## Training the network
 
-The preprocessed data can be fed into the `train.py` script:
+The preprocessed data can be fed into the `train.py` script. An important flag when it comes to training
+is `--schedule`. Using this flag makes the training procedure use a schedule of weights for the MSE loss. 
+Models will be saved to the directory `schedule` when using this flag.
 
-`python train.py data/processed.h5 model.h5 --epochs 20`
+Omitting this flag makes the training procedure first train a VAE by putting 0 weight on the MSE loss
+for the specified number of epochs, and then switch to putting weight mainly on MSE loss for the same amount
+of epochs. Models will be saved to the either directories `vae_only/` or `vae_optim` depending on the current
+training stage.
 
-If a model file already exists it will be opened and resumed. If it doesn't exist, it will be created.
+Examples:
+
+```
+python train.py data/processed.h5 model.h5 --epochs 20 --schedule
+python train.py data/processed.h5 model.h5 --epochs 20
+```
+
+If a model file already exists it will be opened and resumed. If it doesn't exist, a new brand new model will be 
+created. Keep in mind that models will still be saved to the directories mentioned in the 
+above paragraph.
 
 By default, the latent space is 292-D per the paper, and is configurable with the `--latent_dim` flag. If you use a non-default latent dimensionality don't forget to use `--latent_dim` on the other scripts (eg `sample.py`) when you operate on that model checkpoint file or it will be confused.
+
+## Visualizing the latent space
+The `sample_latent.py` script is used to visualize the latent space projected onto the two
+PCA dimensions accounting for the most variance. It displays the plot interactively and also saves it as
+a PDF to the `figs/` directory.
+
+Examples:
+
+```
+python sample_latent.py data/processed.h5 vae_optim/best_model.h5
+python sample_latent.py data/processed.h5 vae_optim/best_model.h5 --save_location="best/model_vis.pdf"
+```
 
 ## Sampling from a trained model
 
