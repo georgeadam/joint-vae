@@ -4,7 +4,7 @@ from molecules.model import MoleculeVAE
 from molecules.utils import load_dataset
 
 LATENT_DIM = 292
-np.set_printoptions(threshold=np.nan)
+
 
 def get_arguments():
     parser = argparse.ArgumentParser(description='Accuracy checker')
@@ -43,9 +43,9 @@ def reconstruct_smiles(original_smiles, model):
 
 def main():
     args = get_arguments()
-
+    np.random.seed(100)
     data_train, data_test, charset, property_train, property_test = load_dataset(args.data)
-    print(data_train.shape)
+
     if args.small:
         idx = np.random.randint(0, data_test.shape[0], size=1000)
         data_test = data_test[idx]
@@ -58,8 +58,6 @@ def main():
     accuracy = check_accuracy(data_test, reconstructed_smiles)
 
     print("Accuracy: " + str(accuracy))
-
-
 
 if __name__ == '__main__':
     main()

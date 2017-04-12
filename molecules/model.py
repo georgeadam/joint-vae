@@ -82,7 +82,7 @@ class MoleculeVAE():
             )
 
         if weights_file:
-            self.autoencoder.load_weights(weights_file)
+            self.autoencoder.load_weights(weights_file, by_name=True)
             self.encoder.load_weights(weights_file, by_name=True)
             self.decoder.load_weights(weights_file, by_name=True)
             self.optimizer.load_weights(weights_file, by_name=True)
@@ -91,7 +91,7 @@ class MoleculeVAE():
         self.autoencoder.compile(optimizer='Adam',
                                  loss=[vae_loss, self.predictor_loss],
                                  metrics=['accuracy'],
-                                 loss_weights=[1.0, 0.5])
+                                 loss_weights=[0.001, 20])
 
     def _buildEncoder(self, x, latent_rep_size, max_length, epsilon_std=0.01):
         h = Convolution1D(9, 9, activation='relu', name='conv_1')(x)

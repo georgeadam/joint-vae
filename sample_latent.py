@@ -4,6 +4,7 @@ import argparse
 import os, sys
 import h5py
 import numpy as np
+import os
 
 from molecules.model import MoleculeVAE
 from molecules.utils import one_hot_array, one_hot_index, from_one_hot_array, \
@@ -12,7 +13,8 @@ from molecules.utils import one_hot_array, one_hot_index, from_one_hot_array, \
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 
-from pylab import figure, axes, scatter, title, show
+from pylab import figure, axes, scatter, title, show, savefig, subplot
+
 
 from rdkit import Chem
 from rdkit.Chem import Draw
@@ -65,22 +67,21 @@ def visualize_latent_rep(args, model, x_latent, properties):
         pca = PCA(n_components = args.pca_components)
         x_latent = pca.fit_transform(x_latent)
 
+    figs_path = 'figs/' + args.model.split('/')[-1] + '.png'
+    directory = os.path.dirname(figs_path)
+
+    try:
+        os.stat(directory)
+    except:
+        os.mkdir(directory)
+
     print(x_latent.shape)
+
     figure(figsize=(6, 6))
     scatter(x_latent[:, 0], x_latent[:, 1], c=properties, marker='.', s=0.1)
+    savefig(figs_path)
     show()
 
-    tsne = TSNE(n_components = args.tsne_components,
-                perplexity = args.tsne_perplexity,
-                learning_rate = args.tsne_lr,
-                n_iter = args.tsne_iterations,
-                verbose = 4)
-    x_latent_proj = tsne.fit_transform(x_latent)
-    del x_latent
-
-    figure(figsize=(6, 6))
-    scatter(x_latent_proj[:, 0], x_latent_proj[:, 1], c=properties, marker='.')
-    show()
 
 def main():
     args = get_arguments()

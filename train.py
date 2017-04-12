@@ -4,7 +4,7 @@ import argparse
 import os
 import h5py
 import numpy as np
-from keras.callbacks import Callback
+from keras.callbacks import Callback, ModelCheckpoint
 from molecules.model import LossHistoryDecodedMean, LossHistoryOptim
 
 NUM_EPOCHS = 1
@@ -23,6 +23,23 @@ class MyCallback(Callback):
             print(self.alpha)
 
 
+def create_model_checkpoint(dir, model_name):
+    filepath = dir + '/' + \
+               model_name + "-{epoch:02d}-{val_decoded_mean_acc:.2f}-{val_optim_pred_loss:.2f}-{val_loss:.2f}.h5"
+    directory = os.path.dirname(filepath)
+
+    try:
+        os.stat(directory)
+    except:
+        os.mkdir(directory)
+
+    checkpointer = ModelCheckpoint(filepath=filepath,
+                                   verbose=1,
+                                   save_best_only=False)
+
+    return checkpointer
+
+
 def get_arguments():
     parser = argparse.ArgumentParser(description='Molecular autoencoder network')
     parser.add_argument('data', type=str, help='The HDF5 file containing preprocessed data.')
@@ -36,6 +53,10 @@ def get_arguments():
                         help='Number of samples to process per minibatch during training.')
     parser.add_argument('--random_seed', type=int, metavar='N', default=RANDOM_SEED,
                         help='Seed to use to start randomizer for shuffling.')
+    parser.add_argument('--schedule', dest='schedule', action='store_true',
+                        help='Indicates whether or not to train using a schedule for the loss weights, else' +
+                             'first train a VAE for args.epochs, and then focus on the prediction module for' +
+                        'another args.epochs. ')
     return parser.parse_args()
 
 def main():
@@ -45,7 +66,7 @@ def main():
     from molecules.model import MoleculeVAE
     from molecules.utils import one_hot_array, one_hot_index, from_one_hot_array, \
         decode_smiles_from_indexes, load_dataset
-    from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, TensorBoard
+    from keras.callbacks import ReduceLROnPlateau
     
     data_train, data_test, charset, property_train, property_test = load_dataset(args.data)
     model = MoleculeVAE()
@@ -54,51 +75,71 @@ def main():
     else:
         model.create(charset, latent_rep_size = args.latent_dim, predictor='regression')
 
-    filepath = "model_linear-schedule-{epoch:02d}-{val_optim_pred_loss:.2f}-{val_decoded_mean_acc:.2f}.h5"
-    checkpointer = ModelCheckpoint(filepath = filepath,
-                                   verbose = 1,
-                                   save_best_only = False)
-
     reduce_lr = ReduceLROnPlateau(monitor = 'val_loss',
                                   factor = 0.2,
                                   patience = 3,
                                   min_lr = 0.0001)
 
-    tbCallBack = TensorBoard(log_dir='./graph')
-
-    optimHistory =LossHistoryOptim()
-    decodedHistory = LossHistoryDecodedMean()
     # Notice how there are two different desired outputs. This is due to the fact that our model has 2 outputs,
     # namely the output of the decoder, and the output of the property prediction module.
-    vae_weight = 1.0
-    # optim_weight = 1.4
-    optim_weight_schedule = [0.10, 0.08, 0.08, 0.18, 0.24, 0.30, 0.40, 0.45, 0.6, 0.8]
-    # optim_weight_schedule = [2.0, 2.4, 2.6, 2.8, 3.0]
+    if args.schedule:
+        checkpointer = create_model_checkpoint('schedule', 'model_schedule')
 
-    for epoch in range(args.epochs):
-        # if epoch > 0 and np.mean(decodedHistory.losses[-20:]) - np.mean(decodedHistory.losses[-150:-130]) < 0.003 \
-        #         and optim_weight > 0.01:
-        #     optim_weight -= 0.02
-        #
-        # elif epoch > 0 and np.mean(optimHistory.losses[-150:-130]) - np.mean(optimHistory.losses[-20:]) < 0.001 \
-        #         and optim_weight < 0.3:
-        #     optim_weight += 0.02
+        vae_weight = 1.0
+        optim_weight_schedule = [0.10, 0.08, 0.08, 0.18, 0.24, 0.30, 0.40, 0.45, 0.6, 0.8, 0.9, 1.0,
+                                 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 2.0, 2.1, 2.2,
+                                 2.0, 2.4, 2.6, 2.8, 3.0]
 
-        print("Optim weight: " + str(optim_weight_schedule[epoch]))
+        for epoch in range(args.epochs):
+            print("Optim weight: " + str(optim_weight_schedule[epoch]))
+            model.autoencoder.compile(optimizer='Adam',
+                                     loss=[model.vae_loss, model.predictor_loss],
+                                     metrics=['accuracy'],
+                                     loss_weights=[vae_weight, optim_weight_schedule[epoch]])
+
+            model.autoencoder.fit(
+                data_train,  # This is our input
+                {'decoded_mean': data_train, 'optim_pred': property_train},  # These are the two desired outputs
+                shuffle=True,
+                nb_epoch=1,
+                batch_size=args.batch_size,
+                callbacks=[checkpointer, reduce_lr],
+                validation_data=(data_test, {'decoded_mean': data_test, 'optim_pred': property_test}))
+    else:
+        checkpointer = create_model_checkpoint('vae_only', 'model_vae_only')
+
         model.autoencoder.compile(optimizer='Adam',
-                                 loss=[model.vae_loss, model.predictor_loss],
-                                 metrics=['accuracy'],
-                                 loss_weights=[vae_weight, optim_weight_schedule[epoch]])
+                                  loss=[model.vae_loss, model.predictor_loss],
+                                  metrics=['accuracy'],
+                                  loss_weights=[1.0, 0.0])
 
         model.autoencoder.fit(
             data_train, # This is our input
             {'decoded_mean': data_train, 'optim_pred': property_train}, # These are the two desired outputs
             shuffle = True,
-            nb_epoch = 1,
+            nb_epoch = args.epochs,
             batch_size = args.batch_size,
-            callbacks = [checkpointer, reduce_lr, tbCallBack, optimHistory, decodedHistory],
+            callbacks = [checkpointer, reduce_lr],
             validation_data = (data_test, {'decoded_mean': data_test, 'optim_pred': property_test})
-    )
+        )
+
+        checkpointer = create_model_checkpoint('vae_optim', 'model_vae_optim')
+
+        model.autoencoder.compile(optimizer='Adam',
+                                  loss=[model.vae_loss, model.predictor_loss],
+                                  metrics=['accuracy'],
+                                  loss_weights=[0.001, 20.0])
+
+        model.autoencoder.fit(
+            data_train, # This is our input
+            {'decoded_mean': data_train, 'optim_pred': property_train}, # These are the two desired outputs
+            shuffle = True,
+            nb_epoch = args.epochs,
+            batch_size = args.batch_size,
+            callbacks = [checkpointer, reduce_lr],
+            validation_data = (data_test, {'decoded_mean': data_test, 'optim_pred': property_test})
+        )
+
 
 if __name__ == '__main__':
     main()
