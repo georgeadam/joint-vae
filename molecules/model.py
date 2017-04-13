@@ -64,28 +64,28 @@ class MoleculeVAE():
                 latent_rep_size,
                 max_length,
                 charset_length
-            ), self._buildRegressionOptimizer(z1, latent_rep_size) if predictor == 'regression' else
-                self._buildClassificationOptimizer(z1, latent_rep_size, num_classes)]
+            ), self._buildRegressionPredictor(z1, latent_rep_size) if predictor == 'regression' else
+                self._buildClassificationPredictor(z1, latent_rep_size, num_classes)]
         )
 
         self.vae_loss = vae_loss
 
         if predictor == 'regression':
-            self.optimizer = Model(
+            self.predictor = Model(
                 encoded_input,
-                self._buildRegressionOptimizer(encoded_input, latent_rep_size)
+                self._buildRegressionPredictor(encoded_input, latent_rep_size)
             )
         else:
-            self.optimizer = Model(
+            self.predictor = Model(
                 encoded_input,
-                self._buildClassificationOptimizer(encoded_input, latent_rep_size, num_classes)
+                self._buildClassificationPredictor(encoded_input, latent_rep_size, num_classes)
             )
 
         if weights_file:
             self.autoencoder.load_weights(weights_file, by_name=True)
             self.encoder.load_weights(weights_file, by_name=True)
             self.decoder.load_weights(weights_file, by_name=True)
-            self.optimizer.load_weights(weights_file, by_name=True)
+            self.predictor.load_weights(weights_file, by_name=True)
 
         self.predictor_loss = 'mean_squared_error' if predictor == 'regression' else 'categorical_crossentropy'
         self.autoencoder.compile(optimizer='Adam',
@@ -126,13 +126,13 @@ class MoleculeVAE():
         h = GRU(501, return_sequences=True, name='gru_3')(h)
         return TimeDistributed(Dense(charset_length, activation='softmax'), name='decoded_mean')(h)
 
-    def _buildRegressionOptimizer(self, z, latent_rep_size, prop='LogP'):
+    def _buildRegressionPredictor(self, z, latent_rep_size, prop='LogP'):
         h = Dense(latent_rep_size, name='optimz_h1', activation='linear')(z)
         # h = Dense(latent_rep_size, name='optimz_h2', activation='tanh')(h)
         # h = Dense(latent_rep_size, name='optimz_h3', activation='tanh')(h)
         return Dense(1, name='optim_pred', activation='linear')(h)
 
-    def _buildClassificationOptimizer(self, z, latent_rep_size, num_classes=2, prop='fda'):
+    def _buildClassificationPredictor(self, z, latent_rep_size, num_classes=2, prop='fda'):
         h = Dense(latent_rep_size, name='optimz_h1', activation='linear')(z)
         # h = Dense(latent_rep_size, name='optimz_h2', activation='tanh')(h)
         # h = Dense(latent_rep_size, name='optimz_h3', activation='tanh')(h)
