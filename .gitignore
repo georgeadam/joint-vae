@@ -7,4 +7,4 @@ graph/
 .idea/
 figs/
 bless/
-!vae_optim/model_vae_optim-18-0.90-0.13-2.64.h5
+!vae_optim/model_vae_optim-17-0.91-0.14-2.76.h5
