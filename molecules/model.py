@@ -78,7 +78,7 @@ class MoleculeVAE():
             )
             self.optimizer_svi = Model(
                 x1,
-                [self._buildRegressionOptimizer(z1, latent_rep_size), Lambda(lambda x: x, name='vae')(z1)]
+                [self._buildRegressionOptimizer(z1, latent_rep_size), Lambda(lambda x: x, name='vae_opt')(z1)]
             )
         else:
             self.optimizer = Model(
@@ -87,7 +87,7 @@ class MoleculeVAE():
             )
             self.optimizer_svi = Model(
                 x1,
-                [self._buildClassificationOptimizer(z1, latent_rep_size), Lambda(lambda x: x, name='vae')(z1)]
+                [self._buildClassificationOptimizer(z1, latent_rep_size), Lambda(lambda x: x, name='vae_opt')(z1)]
             )
 
         if weights_file and task=='autoencode':

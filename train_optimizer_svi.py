@@ -76,9 +76,9 @@ def main():
     model.optimizer_svi.compile(optimizer='Adam',
                              loss=[model.predictor_loss, model.kl_loss],
                              metrics=['accuracy'],
-                             loss_weights=[1])
+                             loss_weights=[1, .5])
 
-    model.optimizer.fit(
+    model.optimizer_svi.fit(
         data_train, # This is our input
         [ property_train, np.zeros([data_train.shape[0],1])], # These are the two desired outputs
         shuffle = True,

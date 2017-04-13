@@ -72,8 +72,8 @@ def main():
     decodedHistory = LossHistoryDecodedMean()
     # Notice how there are two different desired outputs. This is due to the fact that our model has 2 outputs,
     # namely the output of the decoder, and the output of the property prediction module.
-    kl_weight = [0.55, 0.55, 0.55, 0.55, 0.55, 0.65, 0.65, 0.70, 0.8, 0.8]
-    opt_weight = [0.15, 0.15, 0.15, 0.20, 0.25, 0.25, 0.30, 0.30, 0.3, 0.3] 
+    kl_weight = [0.65, 0.65, 0.75, 0.75, 0.75, 0.75, 0.75, 0.80, 0.8, 0.8]
+    opt_weight = [0.35, 0.35, 0.35, 0.35, 0.40, 0.40, 0.45, 0.45, 0.5, 0.5] 
     for epoch in range(args.epochs):
       print("KL weight: " + str(kl_weight[epoch]))
       model.autoencoder.compile(optimizer='Adam',
