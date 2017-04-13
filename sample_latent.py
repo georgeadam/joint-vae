@@ -10,7 +10,7 @@ from molecules.utils import one_hot_array, one_hot_index, from_one_hot_array, \
 
 from sklearn.decomposition import PCA
 
-from pylab import figure, axes, scatter, title, show, savefig, subplot
+import matplotlib.pyplot as plt
 
 
 LATENT_DIM = 292
@@ -55,18 +55,20 @@ def visualize_latent_rep(args, x_latent, properties):
         os.mkdir(directory)
 
     if args.color_bar:
-        fig = figure(figsize=(7, 6))
+        fig = plt.figure(figsize=(7, 6))
     else:
-        fig = figure(figsize=(6, 6))
+        fig = plt.figure(figsize=(6, 6))
 
-    cax = scatter(x_latent[:, 0], x_latent[:, 1], c=properties, marker='.', s=0.1)
+    cax = plt.scatter(x_latent[:, 0], x_latent[:, 1], c=properties, marker='.', s=0.1)
 
     if args.color_bar:
         cbar = fig.colorbar(cax, ticks=[np.amin(properties), np.amax(properties)])
         cbar.ax.set_yticklabels([str(np.amin(properties)), str(np.amax(properties))])
 
-    savefig(figs_path, bbox_inches='tight')
-    show()
+    plt.xlabel('Principal Component 1')
+    plt.ylabel('Principal Component 2')
+    plt.savefig(figs_path, bbox_inches='tight')
+    plt.show()
 
 
 def main():

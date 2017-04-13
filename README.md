@@ -75,28 +75,36 @@ The preprocessed data can be fed into the `train.py` script. An important flag w
 is `--schedule`. Using this flag makes the training procedure use a schedule of weights for the MSE loss. 
 Models will be saved to the directory `schedule` when using this flag.
 
-Omitting this flag makes the training procedure first train a VAE by putting 0 weight on the MSE loss
-for the specified number of epochs, and then switch to putting weight mainly on MSE loss for the same amount
-of epochs. Models will be saved to the either directories `vae_only/` or `vae_optim` depending on the current
-training stage.
+Omitting this flag requires the user to include some combination of the following flags: `--vae` or `--optim`.
+Using just the `--vae` flag will train the model with a weight of 0 on the prediction loss for the specified 
+number of epochs and save intermediate models to the directory `--vae_only`. 
+
+Using just the `--optim` flag will train the model with weight mainly on the prediction loss for the specified number
+of epochs and save the intermediate models to the directory `--vae_optim`.
+
+Using both the `--vae` flag and the `--optim` flag will train the model as a pure VAE first for the specified number
+of epochs, and then focus on the minimizing the prediction loss also for the specified number of epochs. 
 
 Examples:
 
 ```
 python train.py data/processed.h5 model.h5 --epochs 20 --schedule
-python train.py data/processed.h5 model.h5 --epochs 20
+python train.py data/processed.h5 model.h5 --epochs 20 --vae
+python train.py data/processed.h5 model.h5 --epochs 20 --optim
+python train.py data/processed.h5 model.h5 --epochs 20 --vae --optim
 ```
 
 If a model file already exists it will be opened and resumed. If it doesn't exist, a new brand new model will be 
 created. Keep in mind that models will still be saved to the directories mentioned in the 
-above paragraph.
+above paragraphs.
 
 By default, the latent space is 292-D per the paper, and is configurable with the `--latent_dim` flag. If you use a non-default latent dimensionality don't forget to use `--latent_dim` on the other scripts (eg `sample.py`) when you operate on that model checkpoint file or it will be confused.
 
 ## Visualizing the latent space
 The `sample_latent.py` script is used to visualize the latent space projected onto the two
 PCA dimensions accounting for the most variance. It displays the plot interactively and also saves it as
-a PDF to the `figs/` directory.
+a PDF to the `figs/` directory. A particular path to save the plot to can be specified using the
+`--save_location` flag.
 
 Examples:
 

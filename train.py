@@ -57,7 +57,13 @@ def get_arguments():
                         help='Indicates whether or not to train using a schedule for the loss weights, else' +
                              'first train a VAE for args.epochs, and then focus on the prediction module for' +
                         'another args.epochs. ')
+    parser.add_argument('--vae', dest='vae', action='store_true',
+                        help='Indicates whether or not to train using just the VAE error.')
+    parser.add_argument('--optim', dest='optim', action='store_true',
+                        help='Indicates whether or not to train focusing on the optimization error.')
     parser.set_defaults(schedule=False)
+    parser.set_defaults(vae_only=False)
+    parser.set_defaults(vae_optim=False)
     return parser.parse_args()
 
 def main():
@@ -107,39 +113,41 @@ def main():
                 callbacks=[checkpointer, reduce_lr],
                 validation_data=(data_test, {'decoded_mean': data_test, 'optim_pred': property_test}))
     else:
-        checkpointer = create_model_checkpoint('vae_only', 'model_vae_only')
+        if args.vae:
+            checkpointer = create_model_checkpoint('vae_only', 'model_vae_only')
 
-        model.autoencoder.compile(optimizer='Adam',
-                                  loss=[model.vae_loss, model.predictor_loss],
-                                  metrics=['accuracy'],
-                                  loss_weights=[1.0, 0.0])
+            model.autoencoder.compile(optimizer='Adam',
+                                      loss=[model.vae_loss, model.predictor_loss],
+                                      metrics=['accuracy'],
+                                      loss_weights=[1.0, 0.0])
 
-        model.autoencoder.fit(
-            data_train, # This is our input
-            {'decoded_mean': data_train, 'optim_pred': property_train}, # These are the two desired outputs
-            shuffle = True,
-            nb_epoch = args.epochs,
-            batch_size = args.batch_size,
-            callbacks = [checkpointer, reduce_lr],
-            validation_data = (data_test, {'decoded_mean': data_test, 'optim_pred': property_test})
-        )
+            model.autoencoder.fit(
+                data_train, # This is our input
+                {'decoded_mean': data_train, 'optim_pred': property_train}, # These are the two desired outputs
+                shuffle = True,
+                nb_epoch = args.epochs,
+                batch_size = args.batch_size,
+                callbacks = [checkpointer, reduce_lr],
+                validation_data = (data_test, {'decoded_mean': data_test, 'optim_pred': property_test})
+            )
 
-        checkpointer = create_model_checkpoint('vae_optim', 'model_vae_optim')
+        if args.optim:
+            checkpointer = create_model_checkpoint('vae_optim', 'model_vae_optim')
 
-        model.autoencoder.compile(optimizer='Adam',
-                                  loss=[model.vae_loss, model.predictor_loss],
-                                  metrics=['accuracy'],
-                                  loss_weights=[0.001, 20.0])
+            model.autoencoder.compile(optimizer='Adam',
+                                      loss=[model.vae_loss, model.predictor_loss],
+                                      metrics=['accuracy'],
+                                      loss_weights=[0.001, 20.0])
 
-        model.autoencoder.fit(
-            data_train, # This is our input
-            {'decoded_mean': data_train, 'optim_pred': property_train}, # These are the two desired outputs
-            shuffle = True,
-            nb_epoch = args.epochs,
-            batch_size = args.batch_size,
-            callbacks = [checkpointer, reduce_lr],
-            validation_data = (data_test, {'decoded_mean': data_test, 'optim_pred': property_test})
-        )
+            model.autoencoder.fit(
+                data_train, # This is our input
+                {'decoded_mean': data_train, 'optim_pred': property_train}, # These are the two desired outputs
+                shuffle = True,
+                nb_epoch = args.epochs,
+                batch_size = args.batch_size,
+                callbacks = [checkpointer, reduce_lr],
+                validation_data = (data_test, {'decoded_mean': data_test, 'optim_pred': property_test})
+            )
 
 
 if __name__ == '__main__':
