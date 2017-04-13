@@ -1,4 +1,4 @@
-# A Keras implementation of Aspuru-Guzik's molecular autoencoder paper
+# Jointly training a VAE and prediction model on molecular data in Keras
 
 <table style="border-collapse: collapse">
 <tr>
@@ -104,7 +104,7 @@ By default, the latent space is 292-D per the paper, and is configurable with th
 The `sample_latent.py` script is used to visualize the latent space projected onto the two
 PCA dimensions accounting for the most variance. It displays the plot interactively and also saves it as
 a PDF to the `figs/` directory. A particular path to save the plot to can be specified using the
-`--save_location` flag.
+`--save_location` flag. Note that all plots are saved to PDF, regardless of the extension provided.
 
 Examples:
 
@@ -129,7 +129,8 @@ python sample.py target/encoded.h5 model.h5 --target decoder
 
 ## Performance
 
-After 30 epochs on a 500,000 molecule extract from ChEMBL 21 (~7 hours on a NVIDIA GTX 1080), I'm seeing a loss of 0.26 and a reconstruction accuracy of 0.98.
+After 20 epochs on a 500,000 molecule extract from ZINC 12 (~6 hours on a NVIDIA GTX 1070), a loss of 0.43 and a 
+reconstruction accuracy of 0.98 can be achieved.
 
 Projecting the dataset onto 2D latent space gives a figure that looks pretty reasonably like Figure 3 from the paper, though there are some strange striations and it's not quite as well spread out as the examples in the paper.
 
