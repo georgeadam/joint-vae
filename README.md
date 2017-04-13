@@ -1,4 +1,4 @@
-# A Keras implementation of Aspuru-Guzik's molecular autoencoder paper
+# Jointly training a VAE and prediction model on SMILES strings with Keras
 
 <table style="border-collapse: collapse">
 <tr>
@@ -11,8 +11,8 @@
         <strong>Link to the paper</strong><br />
         <a href="https://arxiv.org/abs/1610.02415">arXiv</a>
     </p>
-</td><td width="300">
-<img src="images/network.png" width="300" /></img>
+</td><td width="506">
+<img src="images/model.png" width="506" /></img>
 </td>
 </tr>
 </table>
@@ -71,7 +71,8 @@ The property_train vector is then used as the supplementary output for the joint
 VAE loss and the property prediction network.
 ## Training the network
 
-The preprocessed data can be fed into the `train.py` script. An important flag when it comes to training
+The preprocessed data can be fed into the `train.py` script. The first argument is the location of the preprocessed 
+data, and the second argument is location of an existing model if there is one. An important flag when it comes to training
 is `--schedule`. Using this flag makes the training procedure use a schedule of weights for the MSE loss. 
 Models will be saved to the directory `schedule` when using this flag.
 
@@ -104,7 +105,8 @@ By default, the latent space is 292-D per the paper, and is configurable with th
 The `sample_latent.py` script is used to visualize the latent space projected onto the two
 PCA dimensions accounting for the most variance. It displays the plot interactively and also saves it as
 a PDF to the `figs/` directory. A particular path to save the plot to can be specified using the
-`--save_location` flag.
+`--save_location` flag. Note that even when specifying a location to save to, the file will result in a PDF,
+regardless of the provided extension.
 
 Examples:
 
@@ -129,8 +131,19 @@ python sample.py target/encoded.h5 model.h5 --target decoder
 
 ## Performance
 
-After 30 epochs on a 500,000 molecule extract from ChEMBL 21 (~7 hours on a NVIDIA GTX 1080), I'm seeing a loss of 0.26 and a reconstruction accuracy of 0.98.
+After 20 epochs of training just a VAE on a 500,000 molecule extract (400,000 in training set, 100,000 in testing set) 
+from ZINC 12 (~6 hours on a NVIDIA GTX 1070), a loss of 0.43 and a reconstruction accuracy of
+0.98 was achieved. 
 
-Projecting the dataset onto 2D latent space gives a figure that looks pretty reasonably like Figure 3 from the paper, though there are some strange striations and it's not quite as well spread out as the examples in the paper.
+Projecting the dataset onto 2D latent space reaveals that the latent space forms a relatively homogenous region
+consistenting of vertical bands with no clear direction of increasing LogP:
 
-<img src="images/latent_2d.png" />
+<img src="images/vae_only.png" />
+
+After another 20 epochs of focusing mainly on LogP prediction, model acheived a prediction loss of 0.13,
+but the reconstruction accuracy went down to 0.90,
+
+Projecting the dataset onto 2D latent space shows that the space forms a much simpler manifold than training
+just a pure VAE. There is now a clear increasing direction of LogP:
+
+<img src="images/vae_optim.png" />

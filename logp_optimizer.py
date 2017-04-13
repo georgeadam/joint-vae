@@ -9,6 +9,7 @@ from molecules.utils import load_dataset, from_one_hot_array, decode_smiles_from
 
 LATENT_DIM = 292
 
+
 def get_arguments():
     parser = argparse.ArgumentParser(description='LogP Optimizer')
     parser.add_argument('data', type=str, help='The HDF5 file containing preprocessed data.')
@@ -37,6 +38,7 @@ def get_weights_for_model(model):
     W_2, b_2 = model.layers[2].get_weights()
 
     return W_1, b_1, W_2, b_2
+
 
 def compute_prediction_autograd(W_1, b_1, W_2, b_2, z):
     h = np.dot(W_1.T, z) + b_1
