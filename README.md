@@ -3,12 +3,17 @@
 <table style="border-collapse: collapse">
 <tr>
 <td style="vertical-align: top" valign="top">
-    <strong>Abstract from the paper</strong>
-    <p>We report a method to convert discrete representations of molecules to and from a multidimensional continuous representation. This generative model allows efficient search and optimization through open-ended spaces of chemical compounds.</p>
-    <p>We train deep neural networks on hundreds of thousands of existing chemical structures to construct two coupled functions: an encoder and a decoder. The encoder converts the discrete representation of a molecule into a real-valued continuous vector, and the decoder converts these continuous vectors back to the discrete representation from this latent space.</p>
-    <p>Continuous representations allow us to automatically generate novel chemical structures by performing simple operations in the latent space, such as decoding random vectors, perturbing known chemical structures, or interpolating between molecules. Continuous representations also allow the use of powerful gradient-based optimization to efficiently guide the search for optimized functional compounds. We demonstrate our method in the design of drug-like molecules as well as organic light-emitting diodes.</p>
+    <strong>Abstract</strong>
+    <p>How can pharmaceutical companies and medicinal chemists create new drug-like molecules or optimize existing
+     ones in a cost-effective way? We introduce a training procedure for creating meaningful continuous latent-space 
+     representations from discrete representations of molecules. By having a continuous latent-space representation 
+     where molecules with similar values of a desired property are encouraged to be grouped together, this makes 
+     optimization easier since less time is spent bouncing between local optima. Furthermore, we investigate several 
+     approaches to achieving this goal by using dynamically weighted loss functions that emphasize different objectives 
+     at the appropriate times during training. We show that using a carefully chosen training regime, it is possible to 
+     create clear linear relationships between the continuous latent-space and desired drug-like properties. </p>
     <p>
-        <strong>Link to the paper</strong><br />
+        <strong>Link to previous works</strong><br />
         <a href="https://arxiv.org/abs/1610.02415">arXiv</a>
     </p>
 </td><td width="506">
