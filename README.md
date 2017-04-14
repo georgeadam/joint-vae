@@ -17,6 +17,10 @@
 </tr>
 </table>
 
+## Credits
+The code in this project is inspired by and forked from the following repository
+<https://github.com/maxhodak/keras-molecules>.
+
 ## Requirements
 
 Install using `pip install -r requirements.txt` or build a docker container: `docker build .`
